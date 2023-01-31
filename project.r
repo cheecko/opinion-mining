@@ -18,7 +18,8 @@ setwd(wd)
 # csvData <- "deutschebahn_contractor.csv"
 # csvData <- "deutschebahn_employee.csv"
 # csvData <- "deutschebahn_manager.csv"
-csvData <- "deutschebahn_student.csv"
+# csvData <- "deutschebahn_student.csv"
+csvData <- "deutschebahn_all.csv"
 
 MyData <- read.csv(csvData,
   header = TRUE, #are there column names in 1st row?
@@ -62,7 +63,7 @@ for (j in seq(docs)) {
 dtm <- DocumentTermMatrix(docs)
 tdm <- TermDocumentMatrix(docs)
 
-# Remove words that have 3 and less and more than 20 characters and occur only in 1 document
+# Remove words that have 3 and less and more than 20 characters and occur only in 2 document
 dtmr <- DocumentTermMatrix(docs, control=list(wordLengths=c(3, 20),bounds = list(global = c(2,Inf))))
 
 # Remove sparse terms from a dtmr
@@ -75,10 +76,10 @@ write.csv(as.matrix(dtm), file="exports/DTM.csv")
 # transpose dtm into matrix
 dtm <- as.data.frame.matrix(dtm)
 
-filenames <- list.files(getwd(),pattern="*.csv")
-filenames <-c(filenames)
-rownames(dtm)<-filenames
-rownames(dtmrSparse)<-filenames
+columnnames <- list("title", "positive", "negative", "suggestion")
+columnnames <-c(columnnames)
+rownames(dtm)<-columnnames
+rownames(dtmrSparse)<-columnnames
 
 # transpose matrix DTM into TDM
 tdm <- t(dtm)
@@ -99,10 +100,11 @@ colnames(tdmrSparse_tf_idf) <- rownames(tdmrSparse_tf)
 
 freq <- colSums(as.matrix(dtm))
 freq_tf_idf <- colSums(as.matrix(tf_idf), na.rm = FALSE)
+freq_dtmrSparse <- colSums(as.matrix(dtmrSparse), na.rm = FALSE)
 
 # Graph dtm frequency
 wf = data.frame(word=names(freq), freq=freq)
-p <- ggplot(subset(wf, freq > 10), aes(x = reorder(word, -freq), y = freq))
+p <- ggplot(subset(wf, freq > 50), aes(x = reorder(word, -freq), y = freq))
 p <- p + geom_bar(stat="identity")
 p <- p + theme(axis.text.x=element_text(angle=45, hjust=1))
 
@@ -122,13 +124,15 @@ set.seed(142)
 set.seed(142)
 # wordcloud(words = names(freq_tf_idf), freq = freq_tf_idf, min.freq = 1, max.words=200, random.order=FALSE, rot.per=0.35, colors=brewer.pal(8, "Dark2"))
 
-# Wordcloud dtmr if needed
+# Wordcloud dtmrSparse
+set.seed(142)
+# wordcloud(words = names(freq_dtmrSparse), freq = freq_dtmrSparse, min.freq = 1, max.words=200, random.order=FALSE, rot.per=0.35, colors=brewer.pal(8, "Dark2"))
 
 #############################################################################
 # Cluster Recommendation
 # Elbow
 # wss1 <- function(k) {
-#   kmeans(tdmrSparse, k, nstart = 10 )$tot.withinss
+#   kmeans(tdmrSparse_tf, k, nstart = 10 )$tot.withinss
 # }
 # k.values <- 1:15
 # wss_values1 <- map_dbl(k.values, wss1)
@@ -141,55 +145,55 @@ set.seed(142)
 
 # easy function
 # set.seed(123)
-# fviz_nbclust(tdm, kmeans, method = "wss")
-# fviz_nbclust(tdm, kmeans, method = "silhouette")
+# fviz_nbclust(tdmrSparse_tf, kmeans, method = "wss")
+# fviz_nbclust(tdmrSparse_tf, kmeans, method = "silhouette")
 
 # set.seed(123)
-# gap_stat1 <- clusGap(tdm, FUN = kmeans, nstart = 25, K.max = 10, B = 50)
+# gap_stat1 <- clusGap(tdmrSparse_tf, FUN = kmeans, nstart = 25, K.max = 10, B = 50)
 # print(gap_stat1, method = "firstmax")
 # print(fviz_gap_stat(gap_stat1))
 
-# km.res <- kmeans(tdm, 10, nstart = 25)
-# print(fviz_cluster(km.res, data = tdm, palette = "jco", ggtheme = theme_minimal()))
+# km.res <- kmeans(tdmrSparse_tf, 6, nstart = 25)
+# print(fviz_cluster(km.res, data = tdmrSparse_tf, palette = "jco", ggtheme = theme_minimal()))
 
 
 #############################################################################
 # DOCUMENTS
 # Hierarchical Clustering dtm
 d1 <- dist(dtm, method="euclidian")
-fit <- hclust(d=d1, method="complete")
+fit1 <- hclust(d=d1, method="complete")
 # plot.new()
-# plot(fit, hang=-1, cex=0.5)
-# groups <- cutree(fit, k=3) 
-# rect.hclust(fit, k=3, border="red")
+# plot(fit1, hang=-1, cex=2)
+# groups <- cutree(fit1, k=2) 
+# rect.hclust(fit1, k=2, border="red")
 
-# Kmeans dtm
-# kfit1 <- kmeans(d1, 3)
-# clusplot(as.matrix(d1), kfit1$cluster, color=T, shade=T, labels=2, lines=0)
+# # Kmeans dtm
+# kfit1 <- kmeans(d1, 2)
+# clusplot(as.matrix(d1), kfit1$cluster, color=T, shade=T, labels=2, lines=0, cex=2)
 
 # Hierarchical Clustering tf_idf
 d2 <- dist(tf_idf, method="euclidian")
 fit2 <- hclust(d=d2, method="complete")
 # plot.new()
-# plot(fit2, hang=-1, cex=0.5)
-# groups <- cutree(fit2, k=3) 
-# rect.hclust(fit2, k=3, border="red")
+# plot(fit2, hang=-1, cex=2)
+# groups <- cutree(fit2, k=2) 
+# rect.hclust(fit2, k=2, border="red")
 
 # Kmeans tf_idf
-# kfit2 <- kmeans(d2, 3)
-# clusplot(as.matrix(d2), kfit2$cluster, color=T, shade=T, labels=2, lines=0)
+# kfit2 <- kmeans(d2, 2)
+# clusplot(as.matrix(d2), kfit2$cluster, color=T, shade=T, labels=2, lines=0, cex=2)
 
 # Hierarchical Clustering dtmrSparse
 d3 <- dist(dtmrSparse, method="euclidian") 
 fit3 <- hclust(d=d3, method="complete")
 # plot.new()
-# plot(fit3, hang=-1, cex=0.5)
+# plot(fit3, hang=-1, cex=2)
 # groups <- cutree(fit3, k=2) 
 # rect.hclust(fit3, k=2, border="red")
 
 # Kmeans dtmrSparse
 # kfit3 <- kmeans(d3, 2)
-# clusplot(as.matrix(d3), kfit3$cluster, color=T, shade=T, labels=2, lines=0)
+# clusplot(as.matrix(d3), kfit3$cluster, color=T, shade=T, labels=2, lines=0, cex=2)
 
 #############################################################################
 # TERMS
@@ -223,8 +227,8 @@ d6 <- dist(tdmrSparse, method="euclidian")
 fit6 <- hclust(d=d6, method="complete")
 # plot.new()
 # plot(fit6, hang=-1, cex=0.5)
-# groups <- cutree(fit6, k=4) 
-# rect.hclust(fit6, k=4, border="red")
+# groups <- cutree(fit6, k=6) 
+# rect.hclust(fit6, k=6, border="red")
 
 # Kmeans TERMS tdmrSparse
 # kfit6 <- kmeans(d6, 6)
@@ -257,12 +261,12 @@ dtm_cs <- cosineSim(dtm_mm)
 dtm_d_cs <- 1 - dtm_cs
 dtm_fit_cs <- hclust(d=dtm_d_cs, method="complete")
 # plot.new()
-# plot(dtm_fit_cs, hang=-1, cex=0.5)
-# groups <- cutree(dtm_fit_cs, k=3) 
-# rect.hclust(dtm_fit_cs, k=3, border="red")
+# plot(dtm_fit_cs, hang=-1, cex=2)
+# groups <- cutree(dtm_fit_cs, k=2) 
+# rect.hclust(dtm_fit_cs, k=2, border="red")
 
-# dtm_kfit_cs <- kmeans(dtm_d_cs, 3)
-# clusplot(as.matrix(dtm_d_cs), dtm_kfit_cs$cluster, color=T, shade=T, labels=2, lines=0)
+# dtm_kfit_cs <- kmeans(dtm_d_cs, 2)
+# clusplot(as.matrix(dtm_d_cs), dtm_kfit_cs$cluster, color=T, shade=T, labels=2, lines=0, cex=2)
 
 #############################################################################
 # TERMS
@@ -298,12 +302,15 @@ tdmrSparse_cs <- cosineSim(tdmrSparse_mm)
 tdmrSparse_d_cs <- 1 - tdmrSparse_cs
 tdmrSparse_fit_cs <- hclust(d=tdmrSparse_d_cs, method="complete")
 # plot.new()
-# plot(tdmrSparse_fit_cs, hang=-1, cex=0.5)
+# plot(tdmrSparse_fit_cs, hang=-1, cex=2)
 # groups <- cutree(tdmrSparse_fit_cs, k=6) 
 # rect.hclust(tdmrSparse_fit_cs, k=6, border="red")
 
 # tdmrSparse_kfit_cs <- kmeans(tdmrSparse_d_cs, 6)
 # clusplot(as.matrix(tdmrSparse_d_cs), tdmrSparse_kfit_cs$cluster, color=T, shade=T, labels=2, lines=0)
+
+# km.res <- kmeans(tdmrSparse_d_cs, 6, nstart = 25)
+# print(fviz_cluster(km.res, data = tdmrSparse_d_cs, palette = "jco", ggtheme = theme_minimal()))
 
 #############################################################################
 # DOCUMENTS
@@ -312,7 +319,7 @@ min_cos <- 0.6
 dtm_cs[dtm_cs < min_cos] <- 0
 dtm_cs <- round(dtm_cs,3)
 mm = as.data.frame.matrix(as.matrix(dtm_cs))
-rownames(mm)<-filenames
+rownames(mm)<-columnnames
 adj_cs <- as.matrix(mm)
 
 g=graph.adjacency(adj_cs,mode="undirected",weighted=TRUE)
@@ -338,7 +345,7 @@ vcolors <- hc5[vcolors]
 # membership(ceb)
 
 # clp <- cluster_label_prop(g)
-# plot(clp , g)
+# plot(clp, g)
 # membership(clp)
 
 # cfg <- cluster_fast_greedy(as.undirected(g))
@@ -360,7 +367,7 @@ V(tdm_g)$name
 E(tdm_g)$weight
 
 tdm_deg <- graph.strength(tdm_g, mode="all")
-V(tdm_g)$size <- tdm_deg * 0.3
+V(tdm_g)$size <- tdm_deg * 0.05
 tdm_hc5 <- terrain.colors(5)
 tdm_g.max <- max(tdm_deg)
 tdm_vcolors <- 5 - round(4 *(tdm_deg / tdm_g.max))
