@@ -79,7 +79,7 @@ const positions = ['manager'];
 				// pagesCount = response?.data?.pagesCount
 			}
 			console.log(reviews)
-			await fs.promises.writeFile(`${company.name}_${position}.json`, JSON.stringify(reviews, null, 2));
+			await fs.promises.writeFile(`exports/${company.name}_${position}.json`, JSON.stringify(reviews, null, 2));
 	
 			return data
 		}))
@@ -87,7 +87,7 @@ const positions = ['manager'];
   }))
 
   console.log(data)
-	await fs.promises.writeFile('reviews.json', JSON.stringify(data, null, 2));
+	await fs.promises.writeFile('exports/reviews.json', JSON.stringify(data, null, 2));
 
 	const companiesOverall = data.map(company => {
 		return company.map(position => {
@@ -104,5 +104,5 @@ const positions = ['manager'];
 		})
 	})
 	console.log(companiesOverall)
-	await fs.promises.writeFile('companiesOverall.json', JSON.stringify(companiesOverall, null, 2));
+	await fs.promises.writeFile('exports/companiesOverall.json', JSON.stringify(companiesOverall, null, 2));
 })();

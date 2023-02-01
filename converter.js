@@ -29,10 +29,10 @@ const createCSV = (json) => {
 (async () => {
   companies.forEach(async company => {
     positions.forEach(async position => {
-      const texts = await fs.promises.readFile(`${company.name}_${position}.json`)
+      const texts = await fs.promises.readFile(`exports/${company.name}_${position}.json`)
       const json = JSON.parse(texts);
       const csv = createCSV(json)
-      await fs.promises.writeFile(`${company.name}_${position}.csv`, csv);
+      await fs.promises.writeFile(`exports/${company.name}_${position}.csv`, csv);
     })
   })
 })();
