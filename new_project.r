@@ -13,17 +13,36 @@ library(jsonlite)
 wd <- "G:/Uni/Social Networks and Sentiment Analysis/project"
 setwd(wd)
 
-columnnames <- list("overall","positive","negative","suggestion")
+columnnames <- list("salary","communication","workLife","oldColleagues", "leadership")
 columnnames <-c(columnnames)
 
-jsonFile <- "exports/deutschebahn_manager.json"
+# jsonFile <- "exports/deutschebahn_manager.json"
 # jsonFile <- "exports/deutschebahn_employee.json"
 # jsonFile <- "exports/deutschebahn_student.json"
-# jsonFile <- "exports/deutschebahn_contractor.json"
+jsonFile <- "exports/deutschebahn_contractor.json"
 
 # read from json data
 jsonData <- fromJSON(jsonFile, flatten=TRUE)
-data <- jsonData[,c("title","positive","negative","suggestion")] 
+# data <- jsonData[,c("salary","communication","workLife","oldColleagues", "leadership")] 
+
+data <- list()
+data <- c(data, jsonData[,c("title")])
+data <- c(data, jsonData[,c("positive")])
+data <- c(data, jsonData[,c("negative")])
+data <- c(data, jsonData[,c("suggestion")])
+# data <- c(data, jsonData[,c("atmosphere")])
+# data <- c(data, jsonData[,c("image")])
+# data <- c(data, jsonData[,c("workLife")])
+# data <- c(data, jsonData[,c("career")])
+# data <- c(data, jsonData[,c("salary")])
+# data <- c(data, jsonData[,c("environment")])
+# data <- c(data, jsonData[,c("teamwork")])
+# data <- c(data, jsonData[,c("oldColleagues")])
+# data <- c(data, jsonData[,c("leadership")])
+# data <- c(data, jsonData[,c("workConditions")])
+# data <- c(data, jsonData[,c("communication")])
+# data <- c(data, jsonData[,c("equality")])
+# data <- c(data, jsonData[,c("tasks")])
 
 docs <- VCorpus(VectorSource(data))
 
@@ -41,6 +60,7 @@ for (j in seq(docs)) {
   docs [[j]] <- gsub("‘", "", docs[[j]])
   docs [[j]] <- gsub(")", "", docs[[j]])
   docs [[j]] <- gsub("”", "", docs[[j]])
+  docs [[j]] <- gsub("„", "", docs[[j]])
 }
 docs <- tm_map(docs, PlainTextDocument)
 
@@ -60,6 +80,7 @@ for (j in seq(docs)) {
 }
 
 dtm <- DocumentTermMatrix(docs)
+rownames(dtm)<-seq(1,length(data))
 tdm <- TermDocumentMatrix(docs)
 
 # Remove words that have 3 and less and more than 20 characters and occur only in 2 document
@@ -67,9 +88,6 @@ dtmr <- DocumentTermMatrix(docs, control=list(wordLengths=c(3, 20),bounds = list
 
 # Remove sparse terms from a dtmr
 dtmrSparse = removeSparseTerms(dtmr, 0.70) 
-
-rownames(dtm)<-columnnames
-rownames(dtmrSparse)<-columnnames
 
 write.csv(as.matrix(dtm), file="exports/DTM.csv")
 write.csv(as.matrix(dtm), file="exports/DTMR.csv")
@@ -163,7 +181,7 @@ Comment <- seq(1, NN, by = 1)
 wfTopics = data.frame(Comment = Comment, Topics = ldaOut.topics)
 
 # Building Sub-Corpus of Topic 1
-choosenTopic <- 5
+choosenTopic <- 1 #change this to get data about this topic
 topic1 <- wfTopics[wfTopics[2] == choosenTopic,]
 
 #number of comments with Topic 1
@@ -183,7 +201,7 @@ wfTopic1 = NULL
 for (i in 1:dtm2Row) {
   for (j in 1:topicRow) {
     if (i == list1[j]){
-      c <- data.frame(file=as.character(wfTopics[list1[j],1]),document=as.character(docs[[i]]))
+      c <- data.frame(file=as.character(wfTopics[list1[j],1]),document=as.character(docs[[as.numeric(rownames(dtm2)[i])]]))
       wfTopic1 = rbind(wfTopic1,c)
     }
   }
@@ -192,12 +210,13 @@ for (i in 1:dtm2Row) {
 topic_docs <- Corpus(VectorSource(as.character(wfTopic1$document)))
 mycorpus_dataframe <- data.frame(text=wfTopic1$document, stringsAsFactors=F)
 
-# write.csv(mycorpus_dataframe,'sentiments/manager_suggestion.csv', row.names=FALSE)
+# uncomment code below to write the new csv about a certain topic
+# write.csv(mycorpus_dataframe,'sentiments/manager_topic1.csv', row.names=FALSE)
 
 ##########################################################################################################################################################
 # Sentiment Score
 library(syuzhet)
-Topic_1 <- read.csv("sentiments/manager_suggestion.csv",
+Topic_1 <- read.csv("sentiments/manager_topic7.csv",
   header = TRUE,
   sep = ",",  # or ";"
   strip.white = TRUE,
@@ -217,11 +236,9 @@ usableText = str_replace_all(mycorpus_dataframe1$text,"[^[:graph:]]", " ")
 s_v_sentiment <- get_sentiment(usableText)
 
 summary(s_v_sentiment)
-minn <- min(s_v_sentiment)
-maxx <- max(s_v_sentiment)
-mmm <- maxx-minn
 
-# hist(s_v_sentiment,main="Histogram for the Sentiment by Topic Manager Suggestion",xlab="Scores",ylab="Probability",border="blue",col="green",prob = TRUE,right=FALSE,xlim=c(minn,maxx),breaks=mmm)
+# uncomment or call the code below to get histogramm about sentiment
+# hist(s_v_sentiment,main="Histogram for the Sentiment by Topic 7",xlab="Scores",ylab="Probability",border="blue",col="green",prob = TRUE,right=TRUE)
 # lines(density(s_v_sentiment))
 
 
@@ -234,4 +251,5 @@ rownames(td_new) <- NULL
 
 summary(d)
 
-# qplot(sentiment, data=td_new, weight=count, geom="bar",fill=sentiment) + ggtitle("Opinion sentiments for Manager Suggestion")
+# uncomment or call the code below to get histogramm about nrc sentiment
+# qplot(sentiment, data=td_new, weight=count, geom="bar",fill=sentiment) + ggtitle("Opinion sentiments for Topic 7")
