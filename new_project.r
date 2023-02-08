@@ -23,7 +23,6 @@ jsonFile <- "exports/deutschebahn_contractor.json"
 
 # read from json data
 jsonData <- fromJSON(jsonFile, flatten=TRUE)
-# data <- jsonData[,c("salary","communication","workLife","oldColleagues", "leadership")] 
 
 data <- list()
 data <- c(data, jsonData[,c("title")])
@@ -89,8 +88,8 @@ dtmr <- DocumentTermMatrix(docs, control=list(wordLengths=c(3, 20),bounds = list
 # Remove sparse terms from a dtmr
 dtmrSparse = removeSparseTerms(dtmr, 0.70) 
 
-write.csv(as.matrix(dtm), file="exports/DTM.csv")
-write.csv(as.matrix(dtm), file="exports/DTMR.csv")
+# write.csv(as.matrix(dtm), file="exports/DTM.csv")
+# write.csv(as.matrix(dtm), file="exports/DTMR.csv")
 
 # transpose dtm into matrix
 dtm <- as.data.frame.matrix(dtm)
@@ -116,11 +115,11 @@ p1 <- p1 + theme(axis.text.x=element_text(angle=45, hjust=1))
 # Wordcloud
 # Wordcloud dtm
 set.seed(142)
-# wordcloud(words = names(freq), freq = freq, min.freq = 1, max.words=200, random.order=FALSE, rot.per=0.35, colors=brewer.pal(8, "Dark2"))
+wordcloud(words = names(freq), freq = freq, min.freq = 1, max.words=200, random.order=FALSE, rot.per=0.35, colors=brewer.pal(8, "Dark2"))
 
 # Wordcloud dtmrSparse
 set.seed(142)
-# wordcloud(words = names(freq_dtmrSparse), freq = freq_dtmrSparse, min.freq = 1, max.words=200, random.order=FALSE, rot.per=0.35, colors=brewer.pal(8, "Dark2"))
+wordcloud(words = names(freq_dtmrSparse), freq = freq_dtmrSparse, min.freq = 1, max.words=200, random.order=FALSE, rot.per=0.35, colors=brewer.pal(8, "Dark2"))
 
 
 ##########################################################################################################################################################
@@ -146,17 +145,17 @@ if (mmm == 0) {
 ##########################################################################################################################################################
 # Find Topic Recommendation
 
-# result <- FindTopicsNumber(
-#   dtm2,
-#   topics = seq(from = 2, to = 15, by = 1),
-#   metrics = c("Griffiths2004", "CaoJuan2009", "Arun2010", "Deveaud2014"),
-#   method = "Gibbs",
-#   control = list(seed = 77),
-#   mc.cores = 2L,
-#   verbose = TRUE
-# )
+result <- FindTopicsNumber(
+  dtm2,
+  topics = seq(from = 2, to = 15, by = 1),
+  metrics = c("Griffiths2004", "CaoJuan2009", "Arun2010", "Deveaud2014"),
+  method = "Gibbs",
+  control = list(seed = 77),
+  mc.cores = 2L,
+  verbose = TRUE
+)
 
-# FindTopicsNumber_plot(result)
+FindTopicsNumber_plot(result)
 
 ##########################################################################################################################################################
 # LDA Topic Modelling
@@ -211,12 +210,12 @@ topic_docs <- Corpus(VectorSource(as.character(wfTopic1$document)))
 mycorpus_dataframe <- data.frame(text=wfTopic1$document, stringsAsFactors=F)
 
 # uncomment code below to write the new csv about a certain topic
-# write.csv(mycorpus_dataframe,'sentiments/manager_topic1.csv', row.names=FALSE)
+write.csv(mycorpus_dataframe,'sentiments/manager_topic1.csv', row.names=FALSE)
 
 ##########################################################################################################################################################
 # Sentiment Score
 library(syuzhet)
-Topic_1 <- read.csv("sentiments/manager_topic7.csv",
+Topic_1 <- read.csv("sentiments/contractor_topic5.csv",
   header = TRUE,
   sep = ",",  # or ";"
   strip.white = TRUE,
@@ -235,11 +234,20 @@ usableText = str_replace_all(mycorpus_dataframe1$text,"[^[:graph:]]", " ")
 
 s_v_sentiment <- get_sentiment(usableText)
 
+positive <- sum(s_v_sentiment > 0)
+negative <- sum(s_v_sentiment < 0)
+neutral <- sum(s_v_sentiment == 0)
+percentagePositive <- positive / (positive + negative + neutral) * 100
+
+sentimentCount <- data.frame(c(positive, negative, neutral, percentagePositive))
+rownames(sentimentCount)<-c("positive", "negative", "neutral", "percentagePositive")
+names(sentimentCount)[1] <- "count"
+
 summary(s_v_sentiment)
 
 # uncomment or call the code below to get histogramm about sentiment
-# hist(s_v_sentiment,main="Histogram for the Sentiment by Topic 7",xlab="Scores",ylab="Probability",border="blue",col="green",prob = TRUE,right=TRUE)
-# lines(density(s_v_sentiment))
+hist(s_v_sentiment,main="Histogram for the Sentiment by Topic 7",xlab="Scores",ylab="Probability",border="blue",col="green",prob = TRUE,right=TRUE)
+lines(density(s_v_sentiment))
 
 
 d <- get_nrc_sentiment(usableText)
@@ -252,4 +260,4 @@ rownames(td_new) <- NULL
 summary(d)
 
 # uncomment or call the code below to get histogramm about nrc sentiment
-# qplot(sentiment, data=td_new, weight=count, geom="bar",fill=sentiment) + ggtitle("Opinion sentiments for Topic 7")
+qplot(sentiment, data=td_new, weight=count, geom="bar",fill=sentiment) + ggtitle("Opinion sentiments for Topic 7")
